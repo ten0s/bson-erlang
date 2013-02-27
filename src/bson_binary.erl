@@ -32,7 +32,8 @@ put_field (Name, Value) -> case Value of
 		is_binary (V) -> <<?put_tagname (2), (put_string (V)) /binary>>;
 		is_tuple (V) -> <<?put_tagname (3), (put_document (V)) /binary>>;
 		is_list (V) -> <<?put_tagname (4), (put_array (V)) /binary>>;
-		is_atom (V) -> <<?put_tagname (14), (put_string (atom_to_binary (V, utf8))) /binary>>;
+		is_atom (V) -> io:format("### bson symbols deprecated (put): ~p~n", [V]),
+					<<?put_tagname (14), (put_string (atom_to_binary (V, utf8))) /binary>>;
 		is_integer (V) -> if
 			?fits_int32 (V) -> <<?put_tagname (16), ?put_int32 (V)>>;
 			?fits_int64 (V) -> <<?put_tagname (18), ?put_int64 (V)>>;
@@ -58,7 +59,9 @@ get_field (<<Tag:8, Bin0/binary>>) ->
 			{{regex, Pat, Opt}, Bin3};
 		13 -> {Code, Bin2} = get_string (Bin1), {{javascript, {}, Code}, Bin2};
 		15 -> {Code, Env, Bin2} = get_closure (Bin1), {{javascript, Env, Code}, Bin2};
-		14 -> {UBin, Bin2} = get_string (Bin1), {binary_to_atom (UBin, utf8), Bin2};
+		14 -> {UBin, Bin2} = get_string (Bin1), Atom = binary_to_atom(UBin, utf8),
+			  io:format("### bson symbols deprecated (get): ~p~n", [Atom]),
+			  {Atom, Bin2};
 		16 -> <<?get_int32 (N), Bin2 /binary>> = Bin1, {N, Bin2};
 		18 -> <<?get_int64 (N), Bin2 /binary>> = Bin1, {N, Bin2};
 		17 -> <<?get_int32 (Inc), ?get_int32 (Tim), Bin2 /binary>> = Bin1, {{mongostamp, Inc, Tim}, Bin2};
